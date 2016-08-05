@@ -2,7 +2,6 @@ import scala.collection.convert.decorateAll._
 import org.apache.http.NameValuePair
 import org.apache.http.client.utils.URIBuilder
 import com.ui4j.api.browser.{BrowserEngine, BrowserFactory, Page => BrowserPage}
-
 import com.ui4j.api.browser.BrowserFactory.getWebKit
 import com.ui4j.api.dom.Element
 import com.ui4j.api.browser.{BrowserEngine, BrowserFactory}
