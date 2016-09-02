@@ -12,3 +12,12 @@ libraryDependencies ++= Seq(
   "org.jfxtras" % "openjfx-monocle" % "1.8.0_20",
   "org.slf4j" % "slf4j-log4j12" % "1.7.21"
 )
+
+ unmanagedJars in Compile += Attributed.blank(file(System.getenv("JAVA_HOME") + "/jre/lib/ext/jfxrt.jar"))
+
+// unmanagedJars in Compile += {
+//   val ps = new sys.SystemProperties
+//   val jh = ps("java.home")
+//   Attributed.blank(file(jh) / "lib/ext/jfxrt.jar")
+//   }
+javaOptions in run += "-Dui4j.headless=true"

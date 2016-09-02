@@ -16,30 +16,45 @@ import java.util.regex.Pattern
 class GCrawler() extends WebCrawler {
 
   val badUrlPattern =
-    Pattern.quote(""".*(\.(css|js|bmp|gif|jpe?g|png|tiff?|mid|mp2|mp3|mp4|wav|avi|mov|ram|mpe?g|m4v|pdf|rm|smil|wmv|swf|wma|zip|rar|gz))$""").r.pattern
+    """.*\.(css|js|bmp|gif|jpe?g|png|tiff?|mid|mp2|mp3|mp4|wav|avi|mov|ram|mpe?g|m4v|pdf|rm|smil|wmv|swf|wma|zip|rar|gz|svg)$""".r.pattern
+  val exhibitorProfile =
+    ".*(co.uk/exhibitor-list)".r.pattern
+  override def shouldVisit(refPg: Page, url: WebURL): Boolean = {
 
-  override def shouldVisit(refPg: Page, url: WebURL): Boolean =
-    !badUrlPattern.matcher(url.getURL.toLowerCase).matches
+    val isMatch = !badUrlPattern.matcher(url.getURL.toLowerCase).matches
+    val isProfileMatch = exhibitorProfile.matcher(url.getURL.toLowerCase).matches
+    if (isMatch && isProfileMatch){
+      println(s"found matching link $url")
+    }
+    isMatch
+  }
+
 
   override def visit(pg: Page): Unit = {
     val url = pg.getWebURL
     println(s"\n DocId:\t${url.getDocid} \n url:\t${url.getURL}\n ")
     //unleash full power of the browser on the url
     val webkitDocument = getWebKit.navigate(url.getURL).getDocument
-    val titles = webkitDocument.queryAll(".title a")
-    titles.asScala.foreach((x:Element) => println(x.getText.get))
-    pg.getParseData match {
-      case (pd) if pd.isInstanceOf[HtmlParseData] =>
+    val clickables = webkitDocument.queryAll("td.dxdvPagerPanel")
+    //val clickables = webkitDocument.queryAll("*")
+    clickables.asScala.foreach((x:Element) =>{
+      println (s"found a clickable Element $x")
+      println (x.getText.get)
+      x.click()
+    })
 
-        val htmlParseData = pg.getParseData.asInstanceOf[HtmlParseData]
-        val text = htmlParseData.getText
-        val html = htmlParseData.getHtml
-        val links = htmlParseData.getOutgoingUrls
-        println("Text length: " + text.length)
-        println("Html length: " + html.length)
-        println("Number of outgoing links: " + links.size)
-      case _ => ()
-    }
+
+    // pg.getParseData match {
+    //   case (pd) if pd.isInstanceOf[HtmlParseData] =>
+    //     val htmlParseData = pg.getParseData.asInstanceOf[HtmlParseData]
+    //     val text = htmlParseData.getText
+    //     val html = htmlParseData.getHtml
+    //     val links = htmlParseData.getOutgoingUrls
+    //     println("Text length: " + text.length)
+    //     println("Html length: " + html.length)
+    //     println("Number of outgoing links: " + links.size)
+    //   case _ => ()
+    // }
   }
 }
 
@@ -47,13 +62,13 @@ object GregsCrawler extends App {
 
 
   override def main(args: Array[String]): Unit = {
-      val numCrawlers = 1
-  val rootFolder = "data/folder"
-  val cfg = new CrawlConfig()
-  cfg.setCrawlStorageFolder(rootFolder)
-  cfg.setMaxPagesToFetch(4)
-  cfg.setPolitenessDelay(10)
-  cfg.setMaxDepthOfCrawling(10)
+    val numCrawlers = 1
+    val rootFolder = "data/folder"
+    val cfg = new CrawlConfig()
+    cfg.setCrawlStorageFolder(rootFolder)
+    cfg.setMaxPagesToFetch(5)
+    cfg.setPolitenessDelay(1)
+    cfg.setMaxDepthOfCrawling(4)
 
       val controller = {
     val fetcher = new PageFetcher(cfg)
@@ -63,7 +78,8 @@ object GregsCrawler extends App {
   }
 
     println (s"cfg is ${cfg.toString}")
-    controller.addSeed("http://www.google.com")
+    controller.addSeed("http://www.specialityandfinefoodfairs.co.uk")
+    controller.addSeed("http://www.specialityandfinefoodfairs.co.uk/exhibitor-list")
     controller.start(classOf[GCrawler], numCrawlers)
   }
 
