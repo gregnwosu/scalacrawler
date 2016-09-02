@@ -1,20 +1,16 @@
+import java.util.regex.Pattern
+
 import scala.collection.convert.decorateAll._
-import org.apache.http.NameValuePair
-import org.apache.http.client.utils.URIBuilder
 import com.ui4j.api.browser.{BrowserEngine, BrowserFactory, Page => BrowserPage}
 import com.ui4j.api.browser.BrowserFactory.getWebKit
 import com.ui4j.api.dom.Element
-import com.ui4j.api.browser.{BrowserEngine, BrowserFactory}
 import edu.uci.ics.crawler4j.crawler.{CrawlConfig, CrawlController, Page, WebCrawler}
 import edu.uci.ics.crawler4j.fetcher.PageFetcher
-import edu.uci.ics.crawler4j.frontier.Frontier
-import edu.uci.ics.crawler4j.parser.HtmlParseData
 import edu.uci.ics.crawler4j.robotstxt.{RobotstxtConfig, RobotstxtServer}
 import edu.uci.ics.crawler4j.url.WebURL
-import java.util.regex.Pattern
 
-class GCrawler() extends WebCrawler {
-
+case class GCrawler() extends WebCrawler {
+  val wk=getWebKit
   val badUrlPattern =
     """.*\.(css|js|bmp|gif|jpe?g|png|tiff?|mid|mp2|mp3|mp4|wav|avi|mov|ram|mpe?g|m4v|pdf|rm|smil|wmv|swf|wma|zip|rar|gz|svg)$""".r.pattern
   val exhibitorProfile =
@@ -34,14 +30,27 @@ class GCrawler() extends WebCrawler {
     val url = pg.getWebURL
     println(s"\n DocId:\t${url.getDocid} \n url:\t${url.getURL}\n ")
     //unleash full power of the browser on the url
-    val webkitDocument = getWebKit.navigate(url.getURL).getDocument
-    val clickables = webkitDocument.queryAll("td.dxdvPagerPanel")
+    val page = wk.navigate(url.getURL)
+    val webkitDocument = page.getDocument
+    val maybeClickables = Option(webkitDocument.queryAll("td.dxpButton"))
     //val clickables = webkitDocument.queryAll("*")
-    clickables.asScala.foreach((x:Element) =>{
-      println (s"found a clickable Element $x")
-      println (x.getText.get)
-      x.click()
-    })
+
+    for {
+      arrayClickables <- maybeClickables
+      element=arrayClickables.asScala(2)
+      code<-Option(element.getAttribute ("onclick").get)
+        _ = println (s"found a clickable Element $element")
+      _ = println (s"the code to run is  $code")
+      _ = page.executeScript (code)
+    } yield (print (page.getDocument.getBody.getText))
+
+
+
+
+// .foreach((x:Element) =>{
+//
+//     })
+
 
 
     // pg.getParseData match {
@@ -62,6 +71,7 @@ object GregsCrawler extends App {
 
 
   override def main(args: Array[String]): Unit = {
+
     val numCrawlers = 1
     val rootFolder = "data/folder"
     val cfg = new CrawlConfig()
@@ -78,7 +88,7 @@ object GregsCrawler extends App {
   }
 
     println (s"cfg is ${cfg.toString}")
-    controller.addSeed("http://www.specialityandfinefoodfairs.co.uk")
+
     controller.addSeed("http://www.specialityandfinefoodfairs.co.uk/exhibitor-list")
     controller.start(classOf[GCrawler], numCrawlers)
   }
